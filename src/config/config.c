@@ -20,7 +20,19 @@ static int handler(void* user, const char* section, const char* name,
     if (MATCH("config", "port")) {
         pconfig->port = atoi(value);
     } else if (MATCH("config", "loglevel")) {
-        pconfig->loglevel = strdup(value);
+        if (strcmp(value, "TRACE") == 0) {
+            pconfig->loglevel = 0;
+        } else if (strcmp(value, "DEBUG") == 0) {
+            pconfig->loglevel = 1;
+        } else if (strcmp(value, "INFO") == 0) {
+            pconfig->loglevel = 2;
+        } else if (strcmp(value, "WARN") == 0) {
+            pconfig->loglevel = 3;
+        } else if (strcmp(value, "ERROR") == 0) {
+            pconfig->loglevel = 4;
+        } else if (strcmp(value, "FATAL") == 0) {
+            pconfig->loglevel = 5;
+        }
     } else if (MATCH("config", "logfile")) {
         pconfig->logfile = strdup(value);
     } else if (MATCH("config", "rootpath")) {
@@ -33,8 +45,10 @@ static int handler(void* user, const char* section, const char* name,
         pconfig->backlog = atoi(value);
     } else if (MATCH("config", "customdir")) {
         pconfig->customdir = strdup(value);
-    } else {
-        return 0;  /* unknown section/name, error */
+    } else if (MATCH("config", "nbthreadperworker")) {
+        pconfig->nbthreadperworker = atoi(value);
+    }else {
+        return 0;
     }
     return 1;
 }
@@ -46,7 +60,7 @@ int test_config() {
         printf("Can't load 'config.ini'\n");
         return 1;
     }
-    printf("Config loaded from 'test.ini': port=%d, loglevel=%s, logfile=%s, rootpath=%s\n",
+    printf("Config loaded from 'test.ini': port=%d, loglevel=%d, logfile=%s, rootpath=%s\n",
         config.port, config.loglevel, config.logfile, config.root_path);
     return 0;
 }
@@ -59,10 +73,10 @@ c_config *new_config() {
 
     if (ini_parse("/tmp/config.ini", handler, config) < 0) {
         log_info("Can't load 'config.ini'");
-        log_info("Config loaded from default: port=%d, loglevel=%s, logfile=%s, rootpath=%s, workers=%d, headermaxsize=%d, backlog=%d, customdir=%s",
-        config->port, config->loglevel, config->logfile, config->root_path, config->workers, config->headermaxsize, config->backlog, config->customdir);
+        log_info("Config loaded from default: port=%d, loglevel=%d, logfile=%s, rootpath=%s, workers=%d, headermaxsize=%d, backlog=%d, customdir=%s, nbthreadperworker=%d",
+        config->port, config->loglevel, config->logfile, config->root_path, config->workers, config->headermaxsize, config->backlog, config->customdir, config->nbthreadperworker);
     } else {
-    log_info("Config loaded from '/tmp/config.ini': port=%d, loglevel=%s, logfile=%s, rootpath=%s, workers=%d, headermaxsize=%d, backlog=%d, customdir=%s",
+    log_info("Config loaded from '/tmp/config.ini': port=%d, loglevel=%d, logfile=%s, rootpath=%s, workers=%d, headermaxsize=%d, backlog=%d, customdir=%s",
         config->port, config->loglevel, config->logfile, config->root_path, config->workers, config->headermaxsize, config->backlog, config->customdir);
     }
     return config;
@@ -70,12 +84,13 @@ c_config *new_config() {
 
 void default_config(c_config* pconfig) {
     pconfig->port           = 8000;
-    pconfig->loglevel       = "INFO";
+    pconfig->loglevel       = 2;
     pconfig->logfile        = "/var/log/cherokee_default.log";
     pconfig->root_path      = "/tmp/cherokee/";
-    pconfig->workers        = 3;
+    pconfig->workers        = 4;
     pconfig->headermaxsize  = 1024;
     pconfig->backlog        = 3;
     pconfig->customdir      = "/tmp/cherokee-custom";
+    pconfig->nbthreadperworker = 16;
 }
 

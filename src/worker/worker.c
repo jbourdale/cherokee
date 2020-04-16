@@ -10,7 +10,9 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <pthread.h>
 
+#include "../threadpool/thpool.h"
 #include "../log/log.h"
 #include "../parser/parser.h"
 #include "worker.h"
@@ -21,10 +23,14 @@ void worker(int skt, c_config* config)
     int client_skt;
     char buf[1024];
     c_request *req;
+    c_struct_thpool *params;
+    threadpool  thpool;
 
+    params = malloc(sizeof(c_struct_thpool));
 
     log_info("Worker successfuly started.");
-
+    thpool = thpool_init(config->nbthreadperworker);
+    log_info("Thread pool successfuly initialized (%d threads).", config->nbthreadperworker);
     while(1) {
         log_info("Worker ready to accept connection");
         client_skt = accept(skt, NULL, NULL);
@@ -44,33 +50,46 @@ void worker(int skt, c_config* config)
         log_debug("GOT REQUEST:\n%s", buf);
 
         req = parse(buf);
-        if (req == NULL) {
-            close(client_skt);
-            continue;
+
+        params->client_skt = client_skt;
+        params->config = config;
+        params->req = req;
+
+        thpool_add_work(thpool, (void*)work_in_thread, (void*)params);
+    }
+
+    thpool_destroy(thpool);
+    log_error("Worker exiting");
+    exit(0);
+}
+
+void work_in_thread(c_struct_thpool* params_struct) {
+        log_info("Thread #%u on work !",(int)pthread_self());
+        c_struct_thpool *params;
+        params = (c_struct_thpool*) params_struct;
+        if (params->req == NULL) {
+            close(params->client_skt);
+            return;
         }
 
-        resolve_http_decision_diagram(config, req);
+        resolve_http_decision_diagram(params->config, params->req);
         log_debug("BUILD RESPONSE");
-        int res_len = build_response(req);
+        int res_len = build_response(params->req);
         log_debug("BUILD RESPONSE DONE");
 
-        int err = send(client_skt, req->response->raw, res_len, 0);
+        int err = send(params->client_skt, params->req->response->raw, res_len, 0);
         if (err < 0) {
             log_error("Client write failed");
         } else {
-            if (req->body != NULL) {
-                log_info("HTTP/%d.%d %s %s (%d) Sent %d bytes (%d)", req->version.major, req->version.minor, methodToStr(req->method), req->url, strlen(req->body), req->response->status.code);
+            if (params->req->body != NULL) {
+                log_info("HTTP/%d.%d %s %s (%d) Sent %d bytes (%d)", params->req->version.major, params->req->version.minor, methodToStr(params->req->method), params->req->url, strlen(params->req->body), params->req->response->status.code);
             } else {
-                log_info("HTTP/%d.%d %s %s (%d)", req->version.major, req->version.minor, methodToStr(req->method), req->url, req->response->status.code);
+                log_info("HTTP/%d.%d %s %s (%d)", params->req->version.major, params->req->version.minor, methodToStr(params->req->method), params->req->url, params->req->response->status.code);
             }
         }
 
-        // free_request(req);
-        close(client_skt);
-    }
-
-    log_error("Worker exiting");
-    exit(0);
+        free_request(params->req);
+        close(params->client_skt);
 }
 
 pid_t spawn_worker(int skt, c_config* config)

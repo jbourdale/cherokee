@@ -102,15 +102,10 @@ int html_static_dir(c_config *config, c_request *req) {
     req->response->status = STATUS_200_OK;
     req->response->body->content = html;
     req->response->body->length = strlen(html);
-    req->response->body->is_binary = 0;
+
+    add_response_header(req->response, new_content_type_header("html"));
+    req->response->body->is_binary = is_binary_content_type("html");
+    add_response_header(req->response, new_content_length_header(req->response->body->length));
 
     return HTTPDD_END;
-
-
-    // """
-
-    // {{dirname}}</title>
-    //     </head>
-    // </html>
-    // """
 }

@@ -7,6 +7,7 @@
 */
 
 #include "./httpdd.h"
+#include "../../log/log.h"
 
 int is_method(c_request *req, Http_Method method) {
     if (req != NULL && req->method == method) {
@@ -20,7 +21,9 @@ int is_get_method(__attribute__((unused)) c_config *config, c_request *req) {
 }
 
 int is_get_or_head_method(__attribute__((unused)) c_config *config, c_request *req) {
-    return is_method(req, GET) || is_method(req, HEAD);
+    int x = (is_method(req, GET) || is_method(req, HEAD));
+    log_debug("IS GET OR HEAD METHOD : %d", x);
+    return x;
 }
 
 int is_post_method(__attribute__((unused)) c_config *config, c_request *req) {

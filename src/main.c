@@ -28,18 +28,22 @@ void sigint_handler(__attribute__((unused)) int i) {
 
 int main(void){
     struct sockaddr_in server;
-    // int nb_workers = 4;
-    // pid_t *pids = malloc(nb_workers * sizeof(pid_t));
+    int nb_workers;
+    pid_t *pids;
     c_config *config;
 
+    signal(SIGINT, sigint_handler);
+
     config = new_config();
-    log_set_fp(fopen("access.log", "a+"));
-    log_set_level(0);
+    nb_workers = config->workers;
+    pids = malloc(nb_workers * sizeof(pid_t));
+
+    log_set_fp(fopen(config->logfile, "a+"));
+    log_set_level(config->loglevel);
 
     config->router = get_custom_router(config);
     log_router(config->router);
 
-    signal(SIGINT, sigint_handler);
     log_info("Starting Cherokee");
 
     // Creating the socket
@@ -76,12 +80,11 @@ int main(void){
 
     // start listening on socket
     listen(skt, config->backlog);
-    worker(skt, config);
-    // spawn_multiple_workers(pids, skt, config);
+    spawn_multiple_workers(pids, skt, config);
 
-    // int i;
-    // for (i = 0; i < nb_workers; i++) {
-    //     waitpid(pids[i], NULL, 0);
-    // }
+    int i;
+    for (i = 0; i < nb_workers; i++) {
+        waitpid(pids[i], NULL, 0);
+    }
     log_info("Closing Cherokee");
 }

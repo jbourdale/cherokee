@@ -19,13 +19,14 @@ typedef struct cherokee_router c_router;
 typedef struct cherokee_config
 {
     int     port;
-    char*   loglevel;
+    int     loglevel;
     char*   logfile;
     char*   root_path;
     int     workers;
     int     headermaxsize;
     int     backlog;
     char    *customdir;
+    int     nbthreadperworker;
     c_router *router;
 } c_config;
 

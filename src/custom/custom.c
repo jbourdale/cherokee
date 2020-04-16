@@ -88,8 +88,8 @@ void log_router(c_router *r) {
     i = r;
     while (i != NULL) {
         char *log_r;
-        log_r = malloc(strlen(r->path) + 26 ); // r->path (GET, POST, PUT, DELETE)
-        strcpy(log_r, r->path);
+        log_r = malloc(strlen(i->path) + 26 ); // r->path (GET, POST, PUT, DELETE)
+        strcpy(log_r, strdup(i->path));
         strcat(log_r, " (");
         if (!i->has_get && !i->has_post && !i->has_put && !i->has_delete) {
             strcat(log_r, "NONE");
