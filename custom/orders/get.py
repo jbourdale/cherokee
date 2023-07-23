@@ -4,7 +4,6 @@ def get():
     return {
         "headers": [
             "Content-Type: text/plain",
-            "WSH: la famille"
         ],
-        "body": "Hello World !!!"
+        "body": "Hello World from get.py"
     }

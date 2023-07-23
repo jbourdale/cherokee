@@ -8,7 +8,7 @@
 #include "content.h"
 
 int not_found(__attribute__((unused)) c_config *config, c_request *req) {
-    req->response->body->content = "Not found";
+    req->response->body->content = "Not found\n";
     req->response->body->is_binary = 0;
 
     Http_Status s;

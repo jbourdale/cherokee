@@ -9,9 +9,9 @@ CC 		= 	gcc
 
 LDLIBS  =   -lpython3.6
 
-CFLAGS  =   -Wall -Werror -g -I/usr/include/python3.6m -L/usr/include/python3.6m
+PLIB:=$(shell /usr/bin/python3-config --ldflags --cflags)
 
-PLIB:=$(shell /usr/bin/python3-config --ldflags) #--cflags
+CFLAGS  =   -g -fPIC $(PLIB)
 
 SRC 	= 	src/main.c \
 			src/log/log.c \
